@@ -23,6 +23,8 @@ t_p = 15e-9;
 % it is set to an absurdly high number.
 t_c = 60e-15;
 
+% Wavelength that is being scanned is 1064 nm.
+omega_0 = 2*pi*c/1.064e-6;
 % Raman shift - seperates all beams. Included for testing purposes.
 omega_a = 2994 *10^2 * c;
 
@@ -40,6 +42,9 @@ tau = -30e-15:0.5e-16:(30e-15-0.1e-16);
 time_d = size(t);
 time_d = time_d(1, 2);
 
+tau_d = size(tau);
+tau_d = tau_d(1, 2);
+
 % Pulse envelope
 a_t = real(exp(-t.^2/t_p^2).*exp(1i*t.^2/t_c^2));
 % a_t = real(exp(-T(:, 600).^2/t_p^2).*exp(1i*T(:, 600).^2/t_c^2));
@@ -50,13 +55,13 @@ y_array = real(a_t .* exp(1i*(omega' .* t)));
 
 % In the paper, Shverdin et al delayed all the even beams with respect to
 % the odd beams. This array sets that up.
-y_even = zeros(4, time_d, time_d); % 3D array necessary. 
+y_even = zeros(4, time_d, tau_d); % 3D array necessary. 
 % One axis for each beam, one for the pulse time, and the last for the
 % delay time.
 
-y_even2 = zeros(4, time_d); % 2D array where pulse-time averaged beam will go.
+y_even2 = zeros(4, tau_d); % 2D array where pulse-time averaged beam will go.
 
-y_odd = zeros(3, time_d);
+y_odd = zeros(3, tau_d);
 
 phase = exp(1i*tau' .* 1*omega); % Converting delay time to added phase.
 % phase = exp(1i*Tau(600, :)' .* 1*omega);
@@ -64,8 +69,8 @@ phase = exp(1i*tau' .* 1*omega); % Converting delay time to added phase.
 % delay defined by phase above.
 
 for i = 1:4
-    y_even(i, 1:time_d, 1:time_d) = y_array(2*i-1, 1:time_d).*phase(1:time_d, 2*i-1);
-    y_even2(i, 1:time_d) = y_array(2*i-1, 1:time_d);
+    y_even(i, 1:time_d, 1:tau_d) = y_array(2*i-1, 1:time_d).*phase(1:time_d, 2*i-1);
+    % y_even2(i, 1:time_d) = y_array(2*i-1, 1:time_d);
 %     y_even(i, 1:time_d, 1:time_d) = y_array(1:time_d, 2*i-1).*phase(1:time_d, 2*i-1)';
 %     y_even2(i, 1:time_d) = y_array(1:time_d, 2*i-1);
 end
