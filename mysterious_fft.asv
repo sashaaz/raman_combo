@@ -1,7 +1,4 @@
 clear all
-
-% 0) DEFINE INITIAL CONDITIONS
-
 c = 300;
 amplitude_band=[1.5,1,1,1,.1];
 
@@ -18,7 +15,7 @@ num_modes = 5;
 
 % Center of each mode in nm, mode_wavelength=[ lambda1, lambda2, ... ]
 mode_wavelength = [915, 840, 780, 730, 680];
-delay_mode = 2; % I.e. delay_mode 2 gives picks mode_wavelength(2) - 840 nm.
+delay_mode = 2; % I.e. AS 2 - 840 nm.
 % Define wavelength range of interest, in nm, for FROG trace
 
 lambda_low = 300;
@@ -67,8 +64,8 @@ mode_bandwidth_freq = sqrt(2)*mode_bandwidth_freq/2.35482;
 
 % This frequency axis works to plot E1! THIS IS ANGULAR FREQUENCY.
 frequency = linspace(0, freq_max+2*band_max, freq_num); 
-
-%Define phase (i.e. delay) axis.
+%frequency(3:end) = 
+%Define phase axis
 % phase_range=10*pi;
 % phase_num=200;
 phase_range=100*pi;
@@ -109,11 +106,15 @@ interfere_field = E1 + sum(new_field, 3);
 %
 
 % PLACEHOLDER
-new_field_delayedff = new_field(:, :, delay_mode+1);
+new_field_delayedff = new_field(:, :, delay_mode-1);
 %
 
 % 3) Fourier Transform from pulse freq to pulse time
-
+% E1_time = ifftshift(ifft(E1,num_zeros));
+% E1_time_delayed =ifftshift(ifft(E1_delayed,num_zeros));
+% E1_time_delayed = ifftshift(E1_time_delayed, 2);
+% pulse_time = (-num_zeros/2:num_zeros/2-1)*1/(100*Fs);
+% % pulse_time = -0.2536*num_zeros/2:0.2536:0.2536*num_zeros/2-0.2536;
 delay_time = 0:dt:(phase_num-1)*dt;
 
 % delay_time = -phase_num/2:phase_num/2 - 1;
@@ -137,28 +138,13 @@ new_field_delayedt = ifftshift(new_field_delayedt, 2);
 E1_freq_delayed = fftshift(fft(Esig, num_zeros));
 E1_freq_delayed = ifftshift(E1_freq_delayed, 2);
 
+pulse_freq = (-num_zeros/2:num_zeros/2-1)*pi*Fs_pulse/(2*1000);
+pulse_wavelength = 2*pi*c./pulse_freq;
+pulse_wavelength2 = fftshift(pulse_wavelength);
+pulse_wavelength2(1) = pulse_wavelength2(2) + (pulse_wavelength2(2) - pulse_wavelength2(3));
+%imagesc(delay_time, pulse_wavelength2, abs(E1_freq_delayed));
+
 % DEFINING WAVELENGTH AXIS OF SPECTROGRAM
-
-frequency_final = 0:dw:(num_zeros-1)*dw;
-
-wavelength_final = 2*pi*c./frequency_final;
-wavelength_final = wavelength_final(1001:num_zeros); 
-% The first 1001 points are junk (basically DC and noice anyway).
-% Unfortuantely, as a result you still get 1/x, which is a nonlinear axis.
-% We need a liner one for imagesc.
-
-wavelength_equal = linspace(2*pi*c/frequency_final(1001), ...
-    2*pi*c/frequency_final(end), length(wavelength_final));
-
-E1_freq_delayed_final = E1_freq_delayed(1001:num_zeros, :);
-
-% INTERPOLATE FOR LINEAR AXIS.
-E1_field_transfinal=interp1(wavelength_final, E1_freq_delayed_final, ...
-    wavelength_equal, 'pchip');
-
-imagesc(delay_time, wavelength_equal, abs(E1_field_transfinal));
-
-
 
 
 % PLACEHOLDERS
@@ -168,7 +154,6 @@ new_field_dtransformed = fft(new_field_delayedt, num_zeros);
 frequency_final = 0:dw:(num_zeros-1)*dw;
 
 new_field_transhort = new_field_transformed(1001:num_zeros, :);
-new_field_dtranshort = new_field_dtransformed(1001:num_zeros, :);
 
 wavelength_final = 2*pi*c./frequency_final;
 wavelength_final = wavelength_final(1001:num_zeros);
@@ -177,11 +162,52 @@ wavelength_equal = linspace(2*pi*c/frequency_final(1001), ...
     2*pi*c/frequency_final(end), length(wavelength_final));
 
 
-new_field_transfinal=interp1(wavelength_final, new_field_transhort, ...
-    wavelength_equal, 'pchip');
+new_field_transfinal=interp1(wavelength_final, new_field_transformed(:, 1000),...
+    wavelength_equal, 'cubic');
 
 
-new_field_dtransfinal=interp1(wavelength_final, new_field_dtranshort, ...
-    wavelength_equal, 'pchip');
+%new_field_transformed = fftshift(new_field_transformed);
+
+% 
+% E1_time =ifftshift(ifft(E1,num_zeros,1));
+% new_field_time = ifftshift(ifft(new_field,num_zeros,1));
+% 
+% E1_interfere = E1_time + sum(new_field_time, 3);
+% Esig = (E1_interfere).^2;
+% Isig0 = abs(fftshift((fft(Esig,(2*num_zeros),1)),2)).^2;
 
 
+% Plotting in time delay
+
+% Find frequency step
+%dw=mean(diff(frequency));
+
+% And Time step.
+%dt = 2*pi/(num_zeros*dw);
+% dt = 0.2536;
+% temporal_axis = zeros(1, num_zeros);
+% for k=1:num_zeros
+%         temporal_axis(k) = 0+(k-1)*dt;
+% end
+
+% shit that I don't quite understand.
+
+% Esig = (E1_interfere).^2;
+
+% figure
+% imagesc(real(Esig))
+% Isig0 = abs(fftshift((fft(Esig,(2*num_zeros),1)),2)).^2;
+
+
+% phase=phase./pi;
+
+% figure
+%imagesc(temporal_axis, lambda_equal, Isig2),xlabel('phase'),ylabel('wavelength (nm)')
+%imagesc(temporal_axis, lambda_equal, Isig0),xlabel('phase'),ylabel('wavelength (nm)')
+% imagesc(Isig0);
+% set(gca,'YDir','normal')
+
+%plot(temporal_axis, real(E1_time(:, 1000)).^2)
+%hold on
+%plot(temporal_axis, real(E1_time_delayed(:, 1000)).^2);
+%legend('Normal Pulse', 'Delayed Pulse');
